@@ -15,7 +15,8 @@ void loop() {
 
   if (RTC.read(tm)) {
     Serial.print("Ok, Time = ");
-    print2digits(tm.Hour);
+   int a=tm.Hour;
+    Serial.print(a);
     Serial.write(':');
     print2digits(tm.Minute);
     Serial.write(':');
