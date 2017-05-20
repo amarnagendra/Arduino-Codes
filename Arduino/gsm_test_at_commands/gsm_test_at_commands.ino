@@ -30,15 +30,6 @@ void loop() // run over and over
     }
     mySerial.println();
   }
-if(i==1){
-mySerial.write("AT+CMGF=1\r\n");
-delay(500);
-mySerial.write("AT+CMGS=\"09739105068\"\r\n");
-delay(500);
-mySerial.write("hello");
-delay(500);
-mySerial.write((char)26);
-Serial.println("SMS Sent!");
-}
-i++;
+
+
 }

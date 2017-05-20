@@ -17,10 +17,10 @@ void loop() {
     
     while(to_count_minute<=10)
     {
-      f= analogRead(A0);
+      f= digitalRead(A0);
       if(f==1023)
       {
-        Serial.println("switch closed");
+//        Serial.println("switch closed");
         speed_count++;
       }
     delay(1000);
@@ -28,7 +28,7 @@ void loop() {
     if(to_count_minute==10)
     {
       
-    Serial.println(speed_count);
+    Serial.println(speed_count*6);
     
     }
     

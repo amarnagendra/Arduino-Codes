@@ -24,19 +24,40 @@
 #include <TimeLib.h>
 #include <DS1307RTC.h>
 
+
+#include <dht.h>
+
+
+// standard pins for the shield, adjust as necessary
+
+
+
+
+
+
 File myFile;
+dht DHT;
 void accelerometer();
 void rtc_time();
 void reed_speed();
-int x,y,z;
-int vib_pin=10;
-int vib_data=0;
-int reed_pin=2;
-int f=0;
+void ldr();
+void reedswitch();
+void temperature();
 
-int speed_count;
-int to_count_minute=0;
+#define vib_pin 6
 
+#define reed_pin 2
+#define DHT11_PIN 7
+
+
+
+
+
+#define trigPin 2
+#define echoPin 3
+
+
+int collison_var=1;
 
 
 
@@ -46,13 +67,19 @@ void setup()
  {
         pinMode(vib_pin,INPUT);
         pinMode(reed_pin, INPUT);
+        pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+        pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+        
+        
+        
+  
       // Open serial communications and wait for port to open:
          Serial.begin(9600);
          while (!Serial) 
          {
          ; // wait for serial port to connect. Needed for native USB port only
          }
-
+          
 
          Serial.print("Initializing SD card...");
 
@@ -110,7 +137,7 @@ void setup()
 
 
 void accelerometer(){
- 
+ int x,y,z;
   x= analogRead(A5);
   y=analogRead(A4);
   z=analogRead(A3);
@@ -133,7 +160,7 @@ void accelerometer(){
 //    oldy=y;
 //    oldz=z;
 //    
-    
+//    
 }
 void rtc_time()
 {
@@ -154,7 +181,8 @@ void rtc_time()
     myFile.print(tm.Month);
     myFile.print("/");
     myFile.print(tmYearToCalendar(tm.Year));
-    myFile.println("");
+    myFile.println(" ");
+    
     myFile.close();
   } else {
     if (RTC.chipPresent()) {
@@ -167,54 +195,163 @@ void rtc_time()
     }
     delay(9000);
   }
-  delay(1000);
+  
 }
 
-void reed_speed()
+//void reed_speed()
+//{
+//  to_count_minute=0;
+// speed_count=0;
+//    
+//    while(to_count_minute<=1)
+//    {
+//      f= analogRead(A0);
+//      if(f==1023)
+//      {
+//        Serial.println("switch closed");
+//        speed_count++;
+//      }
+//    delay(1000);
+//    to_count_minute++;
+//    if(to_count_minute==1)
+//    {
+//     myFile = SD.open("log.txt", FILE_WRITE);
+//     myFile.println("the speed calculated is");
+//     myFile.print(speed_count);
+//     myFile.println("rps");
+//     myFile.println(""); 
+//     myFile.close();
+//    
+//    }
+//}
+//}
+
+
+void ldr()
 {
-  to_count_minute=0;
- speed_count=0;
+  int value_ldr=0;
+    value_ldr= analogRead(A1);
+      
+    value_ldr =map (value_ldr,0,1023,0,255);
+    Serial.println("reading ldr");
+    if(value_ldr > 220)
+    { 
+      
+      myFile = SD.open("log.txt", FILE_WRITE);
+      myFile.println("ldr value"); 
+      myFile.println(value_ldr);
+      myFile.close();
+    } 
+    else
+    {
+       myFile = SD.open("log.txt", FILE_WRITE);
+       myFile.println("ldr value is less than 220");
+       myFile.close();
+    }
+}
+
+
+
+
+void reedswitch()
+{
+ int speed_count;
+int to_count_minute=0;
+int f;
     
     while(to_count_minute<=1)
     {
       f= analogRead(A0);
       if(f==1023)
       {
-        Serial.println("switch closed");
+//        Serial.println("switch closed");
         speed_count++;
       }
     delay(1000);
     to_count_minute++;
     if(to_count_minute==1)
     {
-     myFile = SD.open("log.txt", FILE_WRITE);
-     myFile.println("the speed calculated is");
-     myFile.print(speed_count);
-     myFile.println("rps");
-     myFile.println(""); 
-     myFile.close();
+      Serial.println("reading speed");
+      myFile = SD.open("log.txt", FILE_WRITE);
+     myFile.println("speed in rpm"); 
+    myFile.println(speed_count*60);
+    myFile.close();
     
     }
+    
+    }
+     
 }
+
+
+
+
+void temperature()
+{
+  int chk = DHT.read11(DHT11_PIN);
+  Serial.write("reading temp");
+  myFile = SD.open("log.txt", FILE_WRITE);
+  myFile.print("Temperature = ");
+  myFile.println(DHT.temperature);
+  
+  myFile.println(" ");
+  myFile.close();
+  
+}
+
+
+
+int distance_fun()
+{
+  long duration;
+int distance;
+  digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+// Sets the trigPin on HIGH state for 10 micro seconds
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+// Reads the echoPin, returns the sound wave travel time in microseconds
+  duration = pulseIn(echoPin, HIGH);
+// Calculating the distance
+  distance= duration*0.034/2;
+// Prints the distance on the Serial Monitor
+
+  Serial.println("reading distance_fun");
+  return distance;
 }
 
 void loop()
 {
-  rtc_time();
-accelerometer();
-reed_speed();
   
-   
-  vib_data= digitalRead(vib_pin);
-  if(vib_data==1)
+  
+  int dis =  distance_fun();
+  int vib_data= digitalRead(vib_pin);
+  if(vib_data==HIGH && dis < 5)
   {
     Serial.println("collison detedcted");
     
+    collison_var++;
   }
-  delay(1000);
+  else if(collison_var == 1)
+  {
+    
+    rtc_time();
+    accelerometer();
+    reedswitch();
+    ldr();
+    temperature();
+    myFile = SD.open("log.txt", FILE_WRITE);
+    myFile.print("Distance = ");
+    myFile.print(dis);
+    myFile.close();
   
-  
-  
-  
+ }
 }
+  
+  
+  
+  
+  
+
 

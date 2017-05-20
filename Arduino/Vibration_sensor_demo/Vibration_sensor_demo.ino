@@ -1,4 +1,4 @@
-int a=10;
+int a=6;
 int f=0;
 void setup() {
   // put your setup code here, to run once:
@@ -14,8 +14,7 @@ void loop() {
   {
     
     Serial.println("detected");
-    i++;
-    Serial.println(i);
+
   }
   
 }
